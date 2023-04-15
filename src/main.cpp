@@ -101,6 +101,17 @@ ProgramState *programState;
 
 void DrawImGui(ProgramState *programState);
 
+float rectangleVertices[] =
+{
+	// Coords    // texCoords
+	 1.0f, -1.0f,  1.0f, 0.0f,
+	-1.0f, -1.0f,  0.0f, 0.0f,
+	-1.0f,  1.0f,  0.0f, 1.0f,
+
+	 1.0f,  1.0f,  1.0f, 1.0f,
+	 1.0f, -1.0f,  1.0f, 0.0f,
+	-1.0f,  1.0f,  0.0f, 1.0f
+};
 
 float skyboxVertices[] =
 {
@@ -129,11 +140,6 @@ unsigned int skyboxIndices[] =
 	3, 7, 6,
 	6, 2, 3
 };
-
-
-
-
-
 
 int main() {
     // glfw: initialize and configure
@@ -204,6 +210,7 @@ int main() {
 
     // build and compile shaders
     // -------------------------
+    Shader framebufferShader("resources/shaders/framebuffer.vs", "resources/shaders/framebuffer.fs");
     Shader skyboxShader("resources/shaders/skybox.vs", "resources/shaders/skybox.fs");
     Shader windowsShader("resources/shaders/windows.vs", "resources/shaders/windows.fs");
     Shader cobraShader("resources/shaders/cobra.vs", "resources/shaders/cobra.fs");
@@ -250,6 +257,8 @@ int main() {
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+    
 
 
 	// All the faces of the cubemap (make sure they are in this exact order)
@@ -316,8 +325,58 @@ int main() {
     // draw in wireframe
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-    // render loop
+
+
+
+    // FRAMEBUFFER
+	// Create Frame Buffer Object
+	unsigned int FBO;
+	glGenFramebuffers(1, &FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+
+	// Create Framebuffer Texture
+	unsigned int framebufferTexture;
+	glGenTextures(1, &framebufferTexture);
+	glBindTexture(GL_TEXTURE_2D, framebufferTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // Prevents edge bleeding
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Prevents edge bleeding
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, framebufferTexture, 0);
+
+	// Create Render Buffer Object
+	unsigned int RBO;
+	glGenRenderbuffers(1, &RBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, RBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, SCR_WIDTH, SCR_HEIGHT);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
+
+
+	// Prepare framebuffer rectangle VBO and VAO
+	unsigned int rectVAO, rectVBO;
+	glGenVertexArrays(1, &rectVAO);
+	glGenBuffers(1, &rectVBO);
+	glBindVertexArray(rectVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, rectVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(rectangleVertices), &rectangleVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+
+
+	// Error checking framebuffer
+	auto fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
+		std::cout << "Framebuffer error: " << fboStatus << std::endl;
+
+
+
+        // render loop
     // -----------
+    framebufferShader.use();
+    framebufferShader.setInt("screenTexture", 0);
     while (!glfwWindowShouldClose(window)) {
         // per-frame time logic
         // --------------------
@@ -329,11 +388,16 @@ int main() {
         // -----
         processInput(window);
 
+        glClearColor(programState->clearColor.r, programState->clearColor.g, programState->clearColor.b, 1.0f);
+
+
+		// Specify the color of the background
 
         // render
-        glClearColor(programState->clearColor.r, programState->clearColor.g, programState->clearColor.b, 1.0f);
+        glBindFramebuffer(GL_FRAMEBUFFER, FBO);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
+        glEnable(GL_CULL_FACE);
+        glEnable(GL_DEPTH_TEST);
         // SKYBOX [POCETAK]
         glDepthFunc(GL_LEQUAL);
         skyboxShader.use();
@@ -353,10 +417,8 @@ int main() {
 		glDepthFunc(GL_LESS);
 
         // SKYBOX [KRAJ]
+
         // KOBRA [POCETAK]
-
-
-
         // Namestanje svetla za shader kobre
         cobraShader.use();
         pointLight.position = glm::vec3(4.0 * cos(currentFrame), 4.0f, 4.0 * sin(currentFrame));
@@ -607,6 +669,21 @@ int main() {
         glEnable(GL_DEPTH_TEST);
         // KRAJ KOBRA [STENCIL]
 
+
+        // FRAMEBUFFER
+        framebufferShader.use();
+        glDisable(GL_CULL_FACE);
+        // glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glDisable(GL_DEPTH_TEST); // prevents framebuffer rectangle from being discarded
+		// Draw the framebuffer rectangle
+        
+		glBindVertexArray(rectVAO);
+		glBindTexture(GL_TEXTURE_2D, framebufferTexture);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        glEnable(GL_CULL_FACE);
+        glEnable(GL_DEPTH_TEST);
 
         // GUI crtanje
         if (programState->ImGuiEnabled)

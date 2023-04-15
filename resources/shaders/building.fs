@@ -16,9 +16,11 @@ struct PointLight {
 struct Material {
     sampler2D texture_diffuse1;
     sampler2D texture_specular1;
+    sampler2D texture_normal1;
 
     float shininess;
 };
+
 in vec2 TexCoords;
 in vec3 Normal;
 in vec3 FragPos;
@@ -30,8 +32,6 @@ uniform vec3 viewPosition;
 // calculates the color when using a point light.
 vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
 {
-
-
 
     vec3 lightDir = normalize(light.position - fragPos);
     // diffuse shading
@@ -63,7 +63,7 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
     return (ambient + diffuse + specular);
 }
 
-float near = 0.01f;
+float near = 0.001f;
 float far = 10.0f;
 
 float linearizeDepth(float depth) {
@@ -76,9 +76,9 @@ float logisticDepth(float depth, float steepness, float offset) {
     return (1 / (1 + exp(-steepness * (zVal - offset))));
 }
 
-void main()
-{
-    vec3 normal = normalize(Normal);
+void main() {
+    vec3 normalx = normalize(texture(material.texture_normal1, TexCoords).xyz * 2.0f - 1.0f);
+    vec3 normal = normalize(normalx);
     vec3 viewDir = normalize(viewPosition - FragPos);
     vec3 result = CalcPointLight(pointLight, normal, FragPos, viewDir);
     float depth = logisticDepth(gl_FragCoord.z, 0.5, 5.0);
