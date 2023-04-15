@@ -157,11 +157,18 @@ int main() {
 
     // configure global opengl state
     // -----------------------------
+    
+    // Testiranje dubine
     glEnable(GL_DEPTH_TEST);
+
+
+
+
+
 
     // build and compile shaders
     // -------------------------
-    Shader ourShader("resources/shaders/building.vs", "resources/shaders/building.fs");
+    Shader ourShader("resources/shaders/cobra.vs", "resources/shaders/cobra.fs");
 
     // load models
     // -----------
