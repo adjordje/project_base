@@ -163,7 +163,11 @@ int main() {
     // Stencil test
     glEnable(GL_STENCIL_TEST);
     glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-
+    // Face-culling
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_FRONT);
+    glFrontFace(GL_CCW);
+    
 
     // build and compile shaders
     // -------------------------
