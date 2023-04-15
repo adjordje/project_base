@@ -165,15 +165,10 @@ int main() {
     glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
 
-
-
-
-
-
-
     // build and compile shaders
     // -------------------------
     Shader cobraShader("resources/shaders/cobra.vs", "resources/shaders/cobra.fs");
+    Shader cobraOutlineShader("resources/shaders/cobra_outline.vs", "resources/shaders/cobra_outline.fs");
     Shader rb1Shader("resources/shaders/building.vs", "resources/shaders/building.fs");
     Shader rb2Shader("resources/shaders/building.vs", "resources/shaders/building.fs");
     Shader rb3Shader("resources/shaders/building.vs", "resources/shaders/building.fs");
@@ -231,6 +226,9 @@ int main() {
 
 
         // KOBRA [POCETAK]
+
+
+
         // Namestanje svetla za shader kobre
         cobraShader.use();
         pointLight.position = glm::vec3(4.0 * cos(currentFrame), 4.0f, 4.0 * sin(currentFrame));
@@ -251,19 +249,29 @@ int main() {
         cobraShader.setMat4("projection", cobraProjection);
         cobraShader.setMat4("view", cobraView);
 
+        
         // crtanje modela Shelby kobre
         glm::mat4 cobraTransform = glm::mat4(1.0f);
         cobraTransform = glm::translate(cobraTransform,
                                programState->backpackPosition); // translate it down so it's at the center of the scene
         cobraTransform = glm::scale(cobraTransform, glm::vec3(programState->backpackScale));    // it's a bit too big for our scene, so scale it down
         cobraShader.setMat4("model", cobraTransform);
+
+
+        glStencilFunc(GL_ALWAYS, 1, 0xFF);
+        glStencilMask(0xFF);
         cobraModel.Draw(cobraShader);
+
+        // Stencil buffer
+
+        // STENCIL MODE KOBRA
+
         // KOBRA [KRAJ]
 
 
         // zgrada 1 [POCETAK]
         rb1Shader.use();
-        pointLight.position = glm::vec3(4.0 * cos(currentFrame), 4.0f, 4.0 * sin(currentFrame));
+        pointLight.position = glm::vec3(4.0 * cos(currentFrame), 15.0f, 15.0 * sin(currentFrame));
         rb1Shader.setVec3("pointLight.position", pointLight.position);
         rb1Shader.setVec3("pointLight.ambient", pointLight.ambient);
         rb1Shader.setVec3("pointLight.diffuse", pointLight.diffuse);
@@ -428,6 +436,20 @@ int main() {
         
 
 
+        // POCETAK KOBRA [STENCIL]
+        glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+        glStencilMask(0x00);
+        glDisable(GL_DEPTH_TEST);
+        cobraOutlineShader.use();
+        cobraOutlineShader.setFloat("str", 0.08f);
+        cobraOutlineShader.setMat4("projection", cobraProjection);
+        cobraOutlineShader.setMat4("view", cobraView);
+        cobraOutlineShader.setMat4("model", cobraTransform);
+        cobraModel.Draw(cobraOutlineShader);
+        glStencilMask(0xFF);
+        glStencilFunc(GL_ALWAYS, 0, 0xFF);
+        glEnable(GL_DEPTH_TEST);
+        // KRAJ KOBRA [STENCIL]
 
 
         // GUI crtanje
