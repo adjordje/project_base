@@ -246,7 +246,7 @@ int main() {
 
         // transformacije modela kobre
         glm::mat4 cobraProjection = glm::perspective(glm::radians(programState->camera.Zoom),
-                                                (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
+                                                (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 1000.0f);
         glm::mat4 cobraView = programState->camera.GetViewMatrix();
         cobraShader.setMat4("projection", cobraProjection);
         cobraShader.setMat4("view", cobraView);
@@ -275,7 +275,7 @@ int main() {
         rb1Shader.setFloat("material.shininess", 32.0f);
 
         glm::mat4 rb1Projection = glm::perspective(glm::radians(programState->camera.Zoom),
-                                                (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
+                                                (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 1000.0f);
         glm::mat4 rb1View = programState->camera.GetViewMatrix();
         rb1Shader.setMat4("projection", rb1Projection);
         rb1Shader.setMat4("view", rb1View);
@@ -302,7 +302,7 @@ int main() {
         rb2Shader.setFloat("material.shininess", 32.0f);
 
         glm::mat4 rb2Projection = glm::perspective(glm::radians(programState->camera.Zoom),
-                                                (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
+                                                (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 1000.0f);
         glm::mat4 rb2View = programState->camera.GetViewMatrix();
         rb2Shader.setMat4("projection", rb2Projection);
         rb2Shader.setMat4("view", rb2View);
@@ -329,17 +329,28 @@ int main() {
         rb3Shader.setFloat("material.shininess", 32.0f);
 
         glm::mat4 rb3Projection = glm::perspective(glm::radians(programState->camera.Zoom),
-                                                (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
+                                                (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 1000.0f);
         glm::mat4 rb3View = programState->camera.GetViewMatrix();
         rb3Shader.setMat4("projection", rb3Projection);
         rb3Shader.setMat4("view", rb3View);
 
-        glm::mat4 rb3Transform = glm::mat4(1.0f);
-        rb3Transform = glm::translate(rb3Transform,
-                               programState->backpackPosition + glm::vec3(65.0, 0.0, 5.0)); // translate it down so it's at the center of the scene
-        rb3Transform = glm::scale(rb3Transform, glm::vec3(programState->backpackScale));    // it's a bit too big for our scene, so scale it down
-        rb3Shader.setMat4("model", rb3Transform);
-        rb3Model.Draw(rb3Shader);
+        for (int i = -200; i < 200; i+= 30) {
+            glm::mat4 rb3Transform = glm::mat4(1.0f);
+            rb3Transform = glm::translate(rb3Transform,
+                                programState->backpackPosition + glm::vec3(17.0, 0.0, 5.0 + i)); // translate it down so it's at the center of the scene
+            rb3Transform = glm::scale(rb3Transform, glm::vec3(programState->backpackScale));    // it's a bit too big for our scene, so scale it down
+            rb3Shader.setMat4("model", rb3Transform);
+            rb3Model.Draw(rb3Shader);
+        }
+
+        for (int i = -200; i < 200; i+= 30) {
+            glm::mat4 rb3Transform = glm::mat4(1.0f);
+            rb3Transform = glm::translate(rb3Transform,
+                                programState->backpackPosition + glm::vec3(-15.0, 0.0, 5.0 + i)); // translate it down so it's at the center of the scene
+            rb3Transform = glm::scale(rb3Transform, glm::vec3(programState->backpackScale));    // it's a bit too big for our scene, so scale it down
+            rb3Shader.setMat4("model", rb3Transform);
+            rb3Model.Draw(rb3Shader);
+        }
         // zgrada3 [KRAJ]
 
         // zgrada4 [POCETAK]
@@ -356,7 +367,7 @@ int main() {
         rb4Shader.setFloat("material.shininess", 32.0f);
 
         glm::mat4 rb4Projection = glm::perspective(glm::radians(programState->camera.Zoom),
-                                                (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
+                                                (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 1000.0f);
         glm::mat4 rb4View = programState->camera.GetViewMatrix();
         rb4Shader.setMat4("projection", rb4Projection);
         rb4Shader.setMat4("view", rb4View);
@@ -372,7 +383,6 @@ int main() {
 
 
         // PUT [POCETAK]
-
         roadShader.use();
         pointLight.position = glm::vec3(4.0 * cos(currentFrame), 4.0f, 4.0 * sin(currentFrame));
         roadShader.setVec3("pointLight.position", pointLight.position);
@@ -386,10 +396,11 @@ int main() {
         roadShader.setFloat("material.shininess", 32.0f);
 
         glm::mat4 roadProjection = glm::perspective(glm::radians(programState->camera.Zoom),
-                                                (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
+                                                (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 1000.0f);
         glm::mat4 roadView = programState->camera.GetViewMatrix();
         roadShader.setMat4("projection", roadProjection);
         roadShader.setMat4("view", roadView);
+
 
         for (int i = 0; i < 10; i++) {
             glm::mat4 roadTransform = glm::mat4(1.0f);

@@ -64,7 +64,7 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
 }
 
 float near = 0.01f;
-float far = 50.0f;
+float far = 10.0f;
 
 float linearizeDepth(float depth) {
     return (2.0 * near * far) / (far + near - (depth * 2.0 - 1.0) * (far - near));
