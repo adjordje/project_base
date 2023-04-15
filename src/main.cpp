@@ -101,6 +101,40 @@ ProgramState *programState;
 
 void DrawImGui(ProgramState *programState);
 
+
+float skyboxVertices[] =
+{
+	-1.0f, -1.0f,  1.0f,
+	 1.0f, -1.0f,  1.0f,
+	 1.0f, -1.0f, -1.0f,
+	-1.0f, -1.0f, -1.0f,
+	-1.0f,  1.0f,  1.0f,
+	 1.0f,  1.0f,  1.0f,
+	 1.0f,  1.0f, -1.0f,
+	-1.0f,  1.0f, -1.0f
+};
+
+unsigned int skyboxIndices[] =
+{
+	1, 2, 6,
+	6, 5, 1,
+	0, 4, 7,
+	7, 3, 0,
+	4, 5, 6,
+	6, 7, 4,
+	0, 3, 2,
+	2, 1, 0,
+	0, 1, 5,
+	5, 4, 0,
+	3, 7, 6,
+	6, 2, 3
+};
+
+
+
+
+
+
 int main() {
     // glfw: initialize and configure
     // ------------------------------
@@ -170,6 +204,7 @@ int main() {
 
     // build and compile shaders
     // -------------------------
+    Shader skyboxShader("resources/shaders/skybox.vs", "resources/shaders/skybox.fs");
     Shader windowsShader("resources/shaders/windows.vs", "resources/shaders/windows.fs");
     Shader cobraShader("resources/shaders/cobra.vs", "resources/shaders/cobra.fs");
     Shader cobraOutlineShader("resources/shaders/cobra_outline.vs", "resources/shaders/cobra_outline.fs");
@@ -194,6 +229,78 @@ int main() {
     rb3Model.SetShaderTextureNamePrefix("material.");
     rb4Model.SetShaderTextureNamePrefix("material.");
     roadModel.SetShaderTextureNamePrefix("material.");
+
+
+    // Inicijalne postavke skybox-a
+    skyboxShader.use();
+    skyboxShader.setInt("skybox", 0);
+
+    	// Create VAO, VBO, and EBO for the skybox
+	unsigned int skyboxVAO, skyboxVBO, skyboxEBO;
+	glGenVertexArrays(1, &skyboxVAO);
+	glGenBuffers(1, &skyboxVBO);
+	glGenBuffers(1, &skyboxEBO);
+	glBindVertexArray(skyboxVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, skyboxEBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(skyboxIndices), &skyboxIndices, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+
+	// All the faces of the cubemap (make sure they are in this exact order)
+	std::string facesCubemap[6] =
+	{
+        "resources/textures/skybox/rt.jpg",
+        "resources/textures/skybox/lf.jpg",
+        "resources/textures/skybox/up.jpg",
+        "resources/textures/skybox/dn.jpg",
+        "resources/textures/skybox/ft.jpg",
+        "resources/textures/skybox/bk.jpg",
+	};
+
+	// Kreiraj cubemap teksturu
+	unsigned int cubemapTexture;
+	glGenTextures(1, &cubemapTexture);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	//glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
+	for (unsigned int i = 0; i < 6; i++) {
+		int width, height, nrCh;
+		unsigned char* data = stbi_load(facesCubemap[i].c_str(), &width, &height, &nrCh, 0);
+		if (data)
+		{
+			stbi_set_flip_vertically_on_load(false);
+			glTexImage2D
+			(
+				GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+				0,
+				GL_RGB,
+				width,
+				height,
+				0,
+				GL_RGB,
+				GL_UNSIGNED_BYTE,
+				data
+			);
+			stbi_image_free(data);
+		}
+		else
+		{
+			std::cout << "Failed to load texture: " << facesCubemap[i] << std::endl;
+			stbi_image_free(data);
+		}
+	}
+
 
     // Inicijalne postavke svetla
     PointLight& pointLight = programState->pointLight;
@@ -227,7 +334,25 @@ int main() {
         glClearColor(programState->clearColor.r, programState->clearColor.g, programState->clearColor.b, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
+        // SKYBOX [POCETAK]
+        glDepthFunc(GL_LEQUAL);
+        skyboxShader.use();
+        glm::mat4 skyboxView = glm::mat4(1.0f);
+        glm::mat4 skyboxProjection = glm::mat4(1.0f);
+        skyboxView = glm::mat4(glm::mat3(glm::lookAt(programState->camera.Position, programState->camera.Position + programState->camera.Front, programState->camera.Up)));
+		skyboxProjection = glm::perspective(glm::radians(45.0f), (float) SCR_WIDTH / SCR_HEIGHT , 0.1f, 1000.0f);
+		glUniformMatrix4fv(glGetUniformLocation(skyboxShader.ID, "view"), 1, GL_FALSE, glm::value_ptr(skyboxView));
+		glUniformMatrix4fv(glGetUniformLocation(skyboxShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(skyboxProjection));
 
+		glBindVertexArray(skyboxVAO);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+
+		glDepthFunc(GL_LESS);
+
+        // SKYBOX [KRAJ]
         // KOBRA [POCETAK]
 
 
