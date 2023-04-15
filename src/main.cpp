@@ -52,7 +52,7 @@ struct PointLight {
 };
 
 struct ProgramState {
-    glm::vec3 clearColor = glm::vec3(0);
+    glm::vec3 clearColor = glm::vec3(0.9);
     bool ImGuiEnabled = false;
     Camera camera;
     bool CameraMouseMovementUpdateEnabled = true;
@@ -160,6 +160,11 @@ int main() {
     
     // Testiranje dubine
     glEnable(GL_DEPTH_TEST);
+    // Stencil test
+    glEnable(GL_STENCIL_TEST);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+
+
 
 
 
@@ -169,12 +174,28 @@ int main() {
     // build and compile shaders
     // -------------------------
     Shader cobraShader("resources/shaders/cobra.vs", "resources/shaders/cobra.fs");
-
+    Shader rb1Shader("resources/shaders/building.vs", "resources/shaders/building.fs");
+    Shader rb2Shader("resources/shaders/building.vs", "resources/shaders/building.fs");
+    Shader rb3Shader("resources/shaders/building.vs", "resources/shaders/building.fs");
+    Shader rb4Shader("resources/shaders/building.vs", "resources/shaders/building.fs");
+    Shader roadShader("resources/shaders/road.vs", "resources/shaders/road.fs");
     // load models
     // -----------
     Model cobraModel("resources/objects/cobra/Shelby.obj");
-    cobraModel.SetShaderTextureNamePrefix("material.");
+    Model rb1Model("resources/objects/buildings/rb1.obj");
+    Model rb2Model("resources/objects/buildings/rb2.obj");
+    Model rb3Model("resources/objects/buildings/rb3.obj");
+    Model rb4Model("resources/objects/buildings/rb4.obj");
+    Model roadModel("resources/objects/road/road.obj");
 
+    cobraModel.SetShaderTextureNamePrefix("material.");
+    rb1Model.SetShaderTextureNamePrefix("material.");
+    rb2Model.SetShaderTextureNamePrefix("material.");
+    rb3Model.SetShaderTextureNamePrefix("material.");
+    rb4Model.SetShaderTextureNamePrefix("material.");
+    roadModel.SetShaderTextureNamePrefix("material.");
+
+    // Inicijalne postavke svetla
     PointLight& pointLight = programState->pointLight;
     pointLight.position = glm::vec3(4.0f, 4.0, 0.0);
     pointLight.ambient = glm::vec3(0.1, 0.1, 0.1);
@@ -188,7 +209,7 @@ int main() {
 
 
     // draw in wireframe
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     // render loop
     // -----------
@@ -205,11 +226,12 @@ int main() {
 
 
         // render
-        // ------
         glClearColor(programState->clearColor.r, programState->clearColor.g, programState->clearColor.b, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-        // don't forget to enable shader before setting uniforms
+
+        // KOBRA [POCETAK]
+        // Namestanje svetla za shader kobre
         cobraShader.use();
         pointLight.position = glm::vec3(4.0 * cos(currentFrame), 4.0f, 4.0 * sin(currentFrame));
         cobraShader.setVec3("pointLight.position", pointLight.position);
@@ -221,25 +243,185 @@ int main() {
         cobraShader.setFloat("pointLight.quadratic", pointLight.quadratic);
         cobraShader.setVec3("viewPosition", programState->camera.Position);
         cobraShader.setFloat("material.shininess", 32.0f);
-        // view/projection transformations
-        glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom),
+
+        // transformacije modela kobre
+        glm::mat4 cobraProjection = glm::perspective(glm::radians(programState->camera.Zoom),
                                                 (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
-        glm::mat4 view = programState->camera.GetViewMatrix();
-        cobraShader.setMat4("projection", projection);
-        cobraShader.setMat4("view", view);
+        glm::mat4 cobraView = programState->camera.GetViewMatrix();
+        cobraShader.setMat4("projection", cobraProjection);
+        cobraShader.setMat4("view", cobraView);
 
-        // render the loaded model
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model,
+        // crtanje modela Shelby kobre
+        glm::mat4 cobraTransform = glm::mat4(1.0f);
+        cobraTransform = glm::translate(cobraTransform,
                                programState->backpackPosition); // translate it down so it's at the center of the scene
-        model = glm::scale(model, glm::vec3(programState->backpackScale));    // it's a bit too big for our scene, so scale it down
-        cobraShader.setMat4("model", model);
+        cobraTransform = glm::scale(cobraTransform, glm::vec3(programState->backpackScale));    // it's a bit too big for our scene, so scale it down
+        cobraShader.setMat4("model", cobraTransform);
         cobraModel.Draw(cobraShader);
+        // KOBRA [KRAJ]
 
+
+        // zgrada 1 [POCETAK]
+        rb1Shader.use();
+        pointLight.position = glm::vec3(4.0 * cos(currentFrame), 4.0f, 4.0 * sin(currentFrame));
+        rb1Shader.setVec3("pointLight.position", pointLight.position);
+        rb1Shader.setVec3("pointLight.ambient", pointLight.ambient);
+        rb1Shader.setVec3("pointLight.diffuse", pointLight.diffuse);
+        rb1Shader.setVec3("pointLight.specular", pointLight.specular);
+        rb1Shader.setFloat("pointLight.constant", pointLight.constant);
+        rb1Shader.setFloat("pointLight.linear", pointLight.linear);
+        rb1Shader.setFloat("pointLight.quadratic", pointLight.quadratic);
+        rb1Shader.setVec3("viewPosition", programState->camera.Position);
+        rb1Shader.setFloat("material.shininess", 32.0f);
+
+        glm::mat4 rb1Projection = glm::perspective(glm::radians(programState->camera.Zoom),
+                                                (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
+        glm::mat4 rb1View = programState->camera.GetViewMatrix();
+        rb1Shader.setMat4("projection", rb1Projection);
+        rb1Shader.setMat4("view", rb1View);
+
+        glm::mat4 rb1Transform = glm::mat4(1.0f);
+        rb1Transform = glm::translate(rb1Transform,
+                               programState->backpackPosition + glm::vec3(25.0, 0.0, 5.0)); // translate it down so it's at the center of the scene
+        rb1Transform = glm::scale(rb1Transform, glm::vec3(programState->backpackScale));    // it's a bit too big for our scene, so scale it down
+        rb1Shader.setMat4("model", rb1Transform);
+        rb1Model.Draw(rb1Shader);
+        // zgrada1 [KRAJ]
+
+        // zgrada2 [POCETAK]
+        rb2Shader.use();
+        pointLight.position = glm::vec3(4.0 * cos(currentFrame), 4.0f, 4.0 * sin(currentFrame));
+        rb2Shader.setVec3("pointLight.position", pointLight.position);
+        rb2Shader.setVec3("pointLight.ambient", pointLight.ambient);
+        rb2Shader.setVec3("pointLight.diffuse", pointLight.diffuse);
+        rb2Shader.setVec3("pointLight.specular", pointLight.specular);
+        rb2Shader.setFloat("pointLight.constant", pointLight.constant);
+        rb2Shader.setFloat("pointLight.linear", pointLight.linear);
+        rb2Shader.setFloat("pointLight.quadratic", pointLight.quadratic);
+        rb2Shader.setVec3("viewPosition", programState->camera.Position);
+        rb2Shader.setFloat("material.shininess", 32.0f);
+
+        glm::mat4 rb2Projection = glm::perspective(glm::radians(programState->camera.Zoom),
+                                                (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
+        glm::mat4 rb2View = programState->camera.GetViewMatrix();
+        rb2Shader.setMat4("projection", rb2Projection);
+        rb2Shader.setMat4("view", rb2View);
+
+        glm::mat4 rb2Transform = glm::mat4(1.0f);
+        rb2Transform = glm::translate(rb2Transform,
+                               programState->backpackPosition + glm::vec3(-25.0, 0.0, 5.0)); // translate it down so it's at the center of the scene
+        rb2Transform = glm::scale(rb2Transform, glm::vec3(programState->backpackScale));    // it's a bit too big for our scene, so scale it down
+        rb2Shader.setMat4("model", rb2Transform);
+        rb2Model.Draw(rb2Shader);
+        // zgrada2 [KRAJ]
+
+        // zgrada3 [POCETAK]
+        rb3Shader.use();
+        pointLight.position = glm::vec3(4.0 * cos(currentFrame), 4.0f, 4.0 * sin(currentFrame));
+        rb3Shader.setVec3("pointLight.position", pointLight.position);
+        rb3Shader.setVec3("pointLight.ambient", pointLight.ambient);
+        rb3Shader.setVec3("pointLight.diffuse", pointLight.diffuse);
+        rb3Shader.setVec3("pointLight.specular", pointLight.specular);
+        rb3Shader.setFloat("pointLight.constant", pointLight.constant);
+        rb3Shader.setFloat("pointLight.linear", pointLight.linear);
+        rb3Shader.setFloat("pointLight.quadratic", pointLight.quadratic);
+        rb3Shader.setVec3("viewPosition", programState->camera.Position);
+        rb3Shader.setFloat("material.shininess", 32.0f);
+
+        glm::mat4 rb3Projection = glm::perspective(glm::radians(programState->camera.Zoom),
+                                                (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
+        glm::mat4 rb3View = programState->camera.GetViewMatrix();
+        rb3Shader.setMat4("projection", rb3Projection);
+        rb3Shader.setMat4("view", rb3View);
+
+        glm::mat4 rb3Transform = glm::mat4(1.0f);
+        rb3Transform = glm::translate(rb3Transform,
+                               programState->backpackPosition + glm::vec3(65.0, 0.0, 5.0)); // translate it down so it's at the center of the scene
+        rb3Transform = glm::scale(rb3Transform, glm::vec3(programState->backpackScale));    // it's a bit too big for our scene, so scale it down
+        rb3Shader.setMat4("model", rb3Transform);
+        rb3Model.Draw(rb3Shader);
+        // zgrada3 [KRAJ]
+
+        // zgrada4 [POCETAK]
+        rb4Shader.use();
+        pointLight.position = glm::vec3(4.0 * cos(currentFrame), 4.0f, 4.0 * sin(currentFrame));
+        rb4Shader.setVec3("pointLight.position", pointLight.position);
+        rb4Shader.setVec3("pointLight.ambient", pointLight.ambient);
+        rb4Shader.setVec3("pointLight.diffuse", pointLight.diffuse);
+        rb4Shader.setVec3("pointLight.specular", pointLight.specular);
+        rb4Shader.setFloat("pointLight.constant", pointLight.constant);
+        rb4Shader.setFloat("pointLight.linear", pointLight.linear);
+        rb4Shader.setFloat("pointLight.quadratic", pointLight.quadratic);
+        rb4Shader.setVec3("viewPosition", programState->camera.Position);
+        rb4Shader.setFloat("material.shininess", 32.0f);
+
+        glm::mat4 rb4Projection = glm::perspective(glm::radians(programState->camera.Zoom),
+                                                (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
+        glm::mat4 rb4View = programState->camera.GetViewMatrix();
+        rb4Shader.setMat4("projection", rb4Projection);
+        rb4Shader.setMat4("view", rb4View);
+
+        glm::mat4 rb4Transform = glm::mat4(1.0f);
+        rb4Transform = glm::translate(rb4Transform,
+                               programState->backpackPosition + glm::vec3(-85.0, 0.0, 5.0)); // translate it down so it's at the center of the scene
+        rb4Transform = glm::scale(rb4Transform, glm::vec3(programState->backpackScale));    // it's a bit too big for our scene, so scale it down
+        rb4Shader.setMat4("model", rb4Transform);
+        rb4Model.Draw(rb1Shader);
+        // zgrada4 [KRAJ]
+
+
+
+        // PUT [POCETAK]
+
+        roadShader.use();
+        pointLight.position = glm::vec3(4.0 * cos(currentFrame), 4.0f, 4.0 * sin(currentFrame));
+        roadShader.setVec3("pointLight.position", pointLight.position);
+        roadShader.setVec3("pointLight.ambient", pointLight.ambient);
+        roadShader.setVec3("pointLight.diffuse", pointLight.diffuse);
+        roadShader.setVec3("pointLight.specular", pointLight.specular);
+        roadShader.setFloat("pointLight.constant", pointLight.constant);
+        roadShader.setFloat("pointLight.linear", pointLight.linear);
+        roadShader.setFloat("pointLight.quadratic", pointLight.quadratic);
+        roadShader.setVec3("viewPosition", programState->camera.Position);
+        roadShader.setFloat("material.shininess", 32.0f);
+
+        glm::mat4 roadProjection = glm::perspective(glm::radians(programState->camera.Zoom),
+                                                (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
+        glm::mat4 roadView = programState->camera.GetViewMatrix();
+        roadShader.setMat4("projection", roadProjection);
+        roadShader.setMat4("view", roadView);
+
+        for (int i = 0; i < 10; i++) {
+            glm::mat4 roadTransform = glm::mat4(1.0f);
+
+            roadTransform = glm::translate(roadTransform,
+                                programState->backpackPosition + glm::vec3(0.0, -1.4, -i * 41.5)); // translate it down so it's at the center of the scene
+            roadTransform = glm::scale(roadTransform, glm::vec3(programState->backpackScale * 5.0));    // it's a bit too big for our scene, so scale it down
+            roadShader.setMat4("model", roadTransform);
+            roadModel.Draw(roadShader);
+        }
+
+        for (int i = 0; i < 10; i++) {
+            glm::mat4 roadTransform = glm::mat4(1.0f);
+
+            roadTransform = glm::translate(roadTransform,
+                                programState->backpackPosition + glm::vec3(0.0, -1.4, i * 41.5)); // translate it down so it's at the center of the scene
+            roadTransform = glm::scale(roadTransform, glm::vec3(programState->backpackScale * 5.0));    // it's a bit too big for our scene, so scale it down
+            roadShader.setMat4("model", roadTransform);
+            roadModel.Draw(roadShader);
+        }
+        
+
+
+        // PUT [KRAJ]
+        
+
+
+
+
+        // GUI crtanje
         if (programState->ImGuiEnabled)
             DrawImGui(programState);
-
-
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
