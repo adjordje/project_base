@@ -157,7 +157,6 @@ int main() {
 
     // configure global opengl state
     // -----------------------------
-    
     // Testiranje dubine
     glEnable(GL_DEPTH_TEST);
     // Stencil test
@@ -165,12 +164,13 @@ int main() {
     glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
     // Face-culling
     glEnable(GL_CULL_FACE);
-    glCullFace(GL_FRONT);
-    glFrontFace(GL_CCW);
-    
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CW);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // build and compile shaders
     // -------------------------
+    Shader windowsShader("resources/shaders/windows.vs", "resources/shaders/windows.fs");
     Shader cobraShader("resources/shaders/cobra.vs", "resources/shaders/cobra.fs");
     Shader cobraOutlineShader("resources/shaders/cobra_outline.vs", "resources/shaders/cobra_outline.fs");
     Shader rb1Shader("resources/shaders/building.vs", "resources/shaders/building.fs");
@@ -180,6 +180,7 @@ int main() {
     Shader roadShader("resources/shaders/road.vs", "resources/shaders/road.fs");
     // load models
     // -----------
+    Model windowsModel("resources/objects/windows/scene.gltf");
     Model cobraModel("resources/objects/cobra/Shelby.obj");
     Model rb1Model("resources/objects/buildings/rb1.obj");
     Model rb2Model("resources/objects/buildings/rb2.obj");
@@ -204,8 +205,6 @@ int main() {
     pointLight.constant = 1.0f;
     pointLight.linear = 0.09f;
     pointLight.quadratic = 0.032f;
-
-
 
     // draw in wireframe
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -261,7 +260,6 @@ int main() {
         cobraTransform = glm::scale(cobraTransform, glm::vec3(programState->backpackScale));    // it's a bit too big for our scene, so scale it down
         cobraShader.setMat4("model", cobraTransform);
 
-
         glStencilFunc(GL_ALWAYS, 1, 0xFF);
         glStencilMask(0xFF);
         cobraModel.Draw(cobraShader);
@@ -271,7 +269,6 @@ int main() {
         // STENCIL MODE KOBRA
 
         // KOBRA [KRAJ]
-
 
         // zgrada 1 [POCETAK]
         rb1Shader.use();
@@ -435,10 +432,40 @@ int main() {
         }
         
 
+        // WINDOWS
+        windowsShader.use();
+        glm::mat4 windowsProjection = glm::perspective(glm::radians(programState->camera.Zoom),
+            (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 1000.0f);
+        glm::mat4 windowsView = programState->camera.GetViewMatrix();
+        roadShader.setMat4("projection", windowsProjection);
+        roadShader.setMat4("view", windowsView);
+
+        glm::mat4 windowTransform = glm::mat4(1.0f);
+
+        windowTransform = glm::translate(windowTransform,
+                programState->backpackPosition + glm::vec3(0.0, 5.0, 0.0)); // translate it down so it's at the center of the scene
+
+        glDisable(GL_CULL_FACE);
+        glEnable(GL_BLEND);
+        glDisable(GL_DEPTH_TEST);
+        for (int i = 0; i < 5; i++) {
+            windowTransform = glm::mat4(1.0f);
+            windowTransform = glm::translate(windowTransform,
+                programState->backpackPosition + glm::vec3(0.0, 3.0, i * 4)); 
+            windowTransform = glm::scale(windowTransform, glm::vec3(programState->backpackScale * 5.0));    // it's a bit too big for our scene, so scale it down
+            windowTransform = glm::rotate(windowTransform, glm::radians(cos(currentFrame) * 180), glm::vec3(0, 1, 0));
+            windowsShader.setMat4("model", windowTransform);
+
+            windowsModel.Draw(windowsShader);
+        }
+        glEnable(GL_DEPTH_TEST);
+        glDisable(GL_BLEND);
+        glEnable(GL_CULL_FACE);
+        // WINDOWS
+
 
         // PUT [KRAJ]
         
-
 
         // POCETAK KOBRA [STENCIL]
         glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
