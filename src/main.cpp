@@ -161,7 +161,7 @@ int main() {
 
     // build and compile shaders
     // -------------------------
-    Shader ourShader("resources/shaders/2.model_lighting.vs", "resources/shaders/2.model_lighting.fs");
+    Shader ourShader("resources/shaders/building.vs", "resources/shaders/building.fs");
 
     // load models
     // -----------
