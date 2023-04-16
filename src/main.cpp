@@ -27,8 +27,8 @@ void processInput(GLFWwindow *window);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
 // settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+const unsigned int SCR_WIDTH = 1920;
+const unsigned int SCR_HEIGHT = 1080;
 
 // camera
 
@@ -207,7 +207,9 @@ int main() {
     glCullFace(GL_BACK);
     glFrontFace(GL_CW);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
+    // GAMMA KOREKCIJA
+    double gamma = 0.4;
+    glEnable(GL_FRAMEBUFFER_SRGB);
     // build and compile shaders
     // -------------------------
     Shader framebufferShader("resources/shaders/framebuffer.vs", "resources/shaders/framebuffer.fs");
@@ -293,7 +295,7 @@ int main() {
 			(
 				GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
 				0,
-				GL_RGB,
+				GL_SRGB,
 				width,
 				height,
 				0,
@@ -314,9 +316,9 @@ int main() {
     // Inicijalne postavke svetla
     PointLight& pointLight = programState->pointLight;
     pointLight.position = glm::vec3(4.0f, 4.0, 0.0);
-    pointLight.ambient = glm::vec3(0.1, 0.1, 0.1);
-    pointLight.diffuse = glm::vec3(0.6, 0.6, 0.6);
-    pointLight.specular = glm::vec3(1.0, 1.0, 1.0);
+    pointLight.ambient = glm::vec3(0.2, 0.2, 0.2);
+    pointLight.diffuse = glm::vec3(44.6, 44.6, 44.6);
+    pointLight.specular = glm::vec3(445.0, 454.0, 454.0);
 
     pointLight.constant = 1.0f;
     pointLight.linear = 0.09f;
@@ -338,7 +340,7 @@ int main() {
 	unsigned int framebufferTexture;
 	glGenTextures(1, &framebufferTexture);
 	glBindTexture(GL_TEXTURE_2D, framebufferTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // Prevents edge bleeding
@@ -377,6 +379,7 @@ int main() {
     // -----------
     framebufferShader.use();
     framebufferShader.setInt("screenTexture", 0);
+    framebufferShader.setFloat("gamma", gamma);
     while (!glfwWindowShouldClose(window)) {
         // per-frame time logic
         // --------------------
@@ -388,7 +391,7 @@ int main() {
         // -----
         processInput(window);
 
-        glClearColor(programState->clearColor.r, programState->clearColor.g, programState->clearColor.b, 1.0f);
+        glClearColor(pow(programState->clearColor.r, gamma), pow(programState->clearColor.g, gamma), pow(programState->clearColor.b, gamma), 1.0f);
 
 
 		// Specify the color of the background
@@ -421,7 +424,7 @@ int main() {
         // KOBRA [POCETAK]
         // Namestanje svetla za shader kobre
         cobraShader.use();
-        pointLight.position = glm::vec3(4.0 * cos(currentFrame), 4.0f, 4.0 * sin(currentFrame));
+        pointLight.position = glm::vec3(10.0 * cos(currentFrame), 10.0f, 70.0 * sin(currentFrame));
         cobraShader.setVec3("pointLight.position", pointLight.position);
         cobraShader.setVec3("pointLight.ambient", pointLight.ambient);
         cobraShader.setVec3("pointLight.diffuse", pointLight.diffuse);

@@ -7,10 +7,11 @@ uniform sampler2D screenTexture;
 
 const float offset_x = 1.0f / 800.0f;  
 const float offset_y = 1.0f / 800.0f;  
+uniform float gamma;
 
 vec2 offsets[9] = vec2[]
 (
-    vec2(-offset_x,  offset_y), vec2( 0.0f,    offset_y), vec2( offset_x,  offset_y),
+    vec2(-offset_x,  offset_y), vec2( 0.0f,     offset_y), vec2( offset_x,  offset_y),
     vec2(-offset_x,  0.0f),     vec2( 0.0f,    0.0f),     vec2( offset_x,  0.0f),
     vec2(-offset_x, -offset_y), vec2( 0.0f,   -offset_y), vec2( offset_x, -offset_y) 
 );
@@ -18,7 +19,7 @@ vec2 offsets[9] = vec2[]
 float kernel[9] = float[]
 (
     1,  1, 1,
-    1, -2, 1,
+    1, -8, 1,
     1,  1, 1
 );
 
@@ -28,5 +29,11 @@ void main()
     for(int i = 0; i < 9; i++)
         color += vec3(texture(screenTexture, texCoords.st + offsets[i])) * kernel[i];
     FragColor = vec4(color, 1.0f);
+
+    float exposure = 0.5f;
+    vec3 toneMapped = vec3(1.0f) - exp(-color * exposure);
+
+
+    FragColor.rgb = pow(toneMapped, vec3(1.0f) / gamma);
     // FragColor = vec4(1.0f) - texture(screenTexture, texCoords);
 }
