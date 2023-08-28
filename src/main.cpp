@@ -454,6 +454,8 @@ int main() {
         glStencilMask(0xFF);
         cobraModel.Draw(cobraShader);
 
+	// TODO: Ukloniti stencil bafer
+
         // Stencil buffer
 
         // STENCIL MODE KOBRA
