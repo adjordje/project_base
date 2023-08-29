@@ -1,5 +1,7 @@
+# FEATURE
 # project_base
 Moj projekat iz predmeta Racunarska Grafika
+
 
 # Uputstvo
 
