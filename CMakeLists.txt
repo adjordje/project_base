@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.11)
 set(PROJECT_NAME project_base)
 project(${PROJECT_NAME})
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 function(watch)
     set_property(
             DIRECTORY
