@@ -13,7 +13,7 @@ endfunction()
 set(CMAKE_POLICY_DEFAULT_CMP0012 NEW)
 set(CMAKE_CXX_STANDARD 14)
 
-list(APPEND CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -O3")
+list(APPEND CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -O3 --coverage")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
 
 file(GLOB SOURCES "src/*.cpp" "src/*.c" src/main.cpp)
@@ -32,7 +32,7 @@ add_library(STB_IMAGE libs/stb_image.cpp)
 set_source_files_properties(libs/stb_image.cpp include/stb_image.h
         PROPERTIES
         COMPILE_FLAGS
-        "-Wno-shift-negative-value -Wno-implicit-fallthrough")
+        "-Wno-shift-negative-value -Wno-implicit-fallthrough --coverage")
 
 set(LIBS glfw glad OpenGL::GL X11 Xrandr Xinerama Xi Xxf86vm Xcursor dl pthread freetype ${ASSIMP_LIBRARIES} STB_IMAGE imgui)
 
