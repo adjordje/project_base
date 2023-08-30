@@ -1,11 +1,13 @@
 cmake_minimum_required(VERSION 3.11)
-
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(PROJECT_NAME cobraShaderExpo)
 project(${PROJECT_NAME})
 
 set(CMAKE_CXX_STANDARD 14)
 
-list(APPEND CMAKE_CXX_FLAGS "-g -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -O3")
+
+
+list(APPEND CMAKE_CXX_FLAGS "-g -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -O3 --coverage")
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
 
@@ -23,9 +25,9 @@ add_definitions(${OPENGL_DEFINITIONS})
 
 add_library(STB_IMAGE libs/stb_image.cpp)
 set_source_files_properties(libs/stb_image.cpp include/stb_image.h
-        PROPERTIES
-        COMPILE_FLAGS
-        "-g -Wno-shift-negative-value -Wno-implicit-fallthrough")
+	PROPERTIES
+	COMPILE_FLAGS
+	"-g -Wno-shift-negative-value -Wno-implicit-fallthrough --coverage")
 
 set(LIBS glfw glad OpenGL::GL X11 Xrandr Xinerama Xi Xxf86vm Xcursor dl pthread freetype ${ASSIMP_LIBRARIES} STB_IMAGE imgui)
 
@@ -40,15 +42,21 @@ target_link_libraries(${PROJECT_NAME} ${LIBS})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}")
 
+
 function(watch)
-    set_property(
-            DIRECTORY
-            APPEND
-            PROPERTY CMAKE_CONFIGURE_DEPENDS ${ARGV}
-    )
+	set_property(
+		DIRECTORY
+		APPEND
+		PROPERTY CMAKE_CONFIGURE_DEPENDS ${ARGV}
+	)
 endfunction()
 
 file(GLOB SHADERS "shaders/*.vs" "shaders/*.fs")
 foreach(SHADER ${SHADERS})
-    watch(${SHADER})
+	watch(${SHADER})
 endforeach()
+
+if(CMAKE_COMPILER_IS_GNUCXX)
+    include(CodeCoverage)
+    SETUP_TARGET_FOR_COVERAGE_LCOV(NAME coverage EXECUTABLE cobraShaderExpo)
+endif()
